@@ -1,0 +1,19 @@
+# Git 버전 관리에서 제외할 파일 및 폴더 목록
+
+# Node.js
+node_modules/
+
+# 운영 빌드 폴더
+build/
+dist/
+
+# 환경 변수 파일
+.env
+
+# 로그 파일
+npm-debug.log*
+*.log
+
+# OS별 파일
+.DS_Store
+Thumbs.db
