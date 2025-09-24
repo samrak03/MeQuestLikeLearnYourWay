@@ -1,0 +1,1 @@
+console.log('프론트엔드 JavaScript 파일이 성공적으로 로드되었습니다!');

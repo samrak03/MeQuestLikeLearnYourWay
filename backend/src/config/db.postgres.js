@@ -9,6 +9,7 @@ const pool = new pg.Pool({
   database: process.env.PG_NAME,
   password: process.env.PG_PASSWORD,
   port: process.env.PG_PORT || 5432,
+  max: 10, //최대 연결수 설정
 });
 
 // 연결 테스트

@@ -4,6 +4,7 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import mysqlPool from './config/db.mysql.js';
 import postgresPool from './config/db.postgres.js';
+import problemRoutes from './routes/problem.routes.js';
 
 dotenv.config();
 const app = express();
@@ -40,6 +41,10 @@ app.use(morgan('dev'));
 app.get('/', (req, res) => {
   res.json({ message: 'Backend server is running 🚀' });
 });
+
+// 문제 라우트 등록
+app.use('/api/problems', problemRoutes);
+
 
 // 서버 실행
 const PORT = process.env.PORT || 4000;
