@@ -3,7 +3,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
 import mysqlPool from './config/db.mysql.js';
-// import postgresPool from './config/db.postgres.js';
+import postgresPool from './config/db.postgres.js';
 
 dotenv.config();
 const app = express();
@@ -19,13 +19,15 @@ app.use(morgan('dev'));
 // 이 코드는 서버가 시작될 때 데이터베이스 연결을 확인합니다.
 (async () => {
   try {
+    // MySQL 연결 테스트
     const mysqlConnection = await mysqlPool.getConnection();
     console.log('✅ MySQL database connected successfully!');
     mysqlConnection.release();
     
-    // const postgresConnection = await postgresPool.connect();
-    // console.log('✅ PostgreSQL database connected successfully!');
-    // postgresConnection.release();
+    //PostgreSQL 연결 테스트
+    const postgresConnection = await postgresPool.connect();
+    console.log('✅ PostgreSQL database connected successfully!');
+    postgresConnection.release();
 
   } catch (error) {
     console.error('❌ Database connection failed:', error.message);
