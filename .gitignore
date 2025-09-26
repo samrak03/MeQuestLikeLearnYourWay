@@ -17,3 +17,6 @@ npm-debug.log*
 # OS별 파일
 .DS_Store
 Thumbs.db
+
+# Python venv
+.venv/
