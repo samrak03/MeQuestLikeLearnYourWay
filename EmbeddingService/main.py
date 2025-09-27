@@ -21,21 +21,25 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 model = None
 
 # DB 연결 정보 (환경변수 기반)
-PG_HOST = os.getenv("PG_HOST", "localhost")
+PG_HOST = os.getenv("PG_HOST", "192.168.0.128")
 PG_PORT = os.getenv("PG_PORT", "5432")
 PG_USER = os.getenv("PG_USER", "mequest_user")
 PG_PASS = os.getenv("PG_PASS", "mequest_user")
-PG_DB   = os.getenv("PG_DB", "mequest")
+PG_DB   = os.getenv("PG_DB", "mequest_rag_db")
 
 @app.on_event("startup")
 async def load_model():
     global model
     try:
-        print(f"Loading BGE-m3 model on device: {device}...")
+        # print(f"Loading BGE-m3 model on device: {device}...")
+        # model = SentenceTransformer("/mnt/d/MeQuest/Models/bge-m3", device=device)
+        # print("BGE-m3 model loaded successfully.")
+        logger.info(f"Loading BGE-m3 model on device: {device}...")
         model = SentenceTransformer("/mnt/d/MeQuest/Models/bge-m3", device=device)
-        print("BGE-m3 model loaded successfully.")
+        logger.info("BGE-m3 model loaded successfully.")
     except Exception as e:
-        print(f"Error loading model: {e}")
+        # print(f"Error loading model: {e}")
+        logger.error("Error loading model", exc_info=True)
         model = None   # 서버는 뜨되 model_loaded=False 로 표시됨
 
 class TextToEmbed(BaseModel):
