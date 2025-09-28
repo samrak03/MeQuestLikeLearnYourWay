@@ -21,7 +21,7 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 model = None
 
 # DB 연결 정보 (환경변수 기반)
-PG_HOST = os.getenv("PG_HOST", "192.168.0.128")
+PG_HOST = os.getenv("PG_HOST", "localhost")
 PG_PORT = os.getenv("PG_PORT", "5432")
 PG_USER = os.getenv("PG_USER", "mequest_user")
 PG_PASS = os.getenv("PG_PASS", "mequest_user")
