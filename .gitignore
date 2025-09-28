@@ -13,12 +13,19 @@ dist/
 # 로그 파일
 npm-debug.log*
 *.log
+*.tmp
+*.swp
+.vscode/
 
 # OS별 파일
 .DS_Store
 Thumbs.db
 
 # Python venv
-.venv/
 __pycache__/
-main.cpython-312.*
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
