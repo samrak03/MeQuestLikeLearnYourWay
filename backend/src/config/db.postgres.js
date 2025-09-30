@@ -16,10 +16,10 @@ const pool = new pg.Pool({
 async function testConnection() {
   try {
     const client = await pool.connect();
-    console.log('✅ PostgreSQL database connected successfully!');
+    console.log('✅ (db.postgres.js)PostgreSQL database connected successfully!');
     client.release(); // 연결 해제
   } catch (error) {
-    console.error('❌ PostgreSQL connection failed:', error.message);
+    console.error('❌ (db.postgres.js)PostgreSQL connection failed:', error.message);
   }
 }
 

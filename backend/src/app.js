@@ -22,16 +22,16 @@ app.use(morgan('dev'));
   try {
     // MySQL 연결 테스트
     const mysqlConnection = await mysqlPool.getConnection();
-    console.log('✅ MySQL database connected successfully!');
+    console.log('✅ (app.js)MySQL database connected successfully!');
     mysqlConnection.release();
     
     //PostgreSQL 연결 테스트
     const postgresConnection = await postgresPool.connect();
-    console.log('✅ PostgreSQL database connected successfully!');
+    console.log('✅ (app.js)PostgreSQL database connected successfully!');
     postgresConnection.release();
 
   } catch (error) {
-    console.error('❌ Database connection failed:', error.message);
+    console.error('❌ (app.js)Database connection failed:', error.message);
   }
 })();
 
@@ -39,7 +39,7 @@ app.use(morgan('dev'));
 
 // 기본 라우터
 app.get('/', (req, res) => {
-  res.json({ message: 'Backend server is running 🚀' });
+  res.json({ message: '(app.js)Backend server is running 🚀' });
 });
 
 // 문제 라우트 등록
@@ -49,6 +49,6 @@ app.use('/api/problems', problemRoutes);
 // 서버 실행
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
-  console.log(`✅ Server running on http://localhost:${PORT}`);
+  console.log(`✅ (app.js)Server running on http://localhost:${PORT}`);
 });
 
