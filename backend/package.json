@@ -2,15 +2,20 @@
   "name": "mequest-backend",
   "version": "1.0.0",
   "description": "",
+  "type": "module",
   "main": "src/app.js",
   "scripts": {
-    "start": "node src",
-    "dev": "nodemon src/app.js"
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "start-llm": "node src/app-llm.js",
+    "dev-llm": "nodemon src/app-llm.js",
+    "dev-all": "concurrently \"npm run dev\" \"npm run dev-llm\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "axios": "^1.12.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
@@ -20,6 +25,7 @@
     "winston": "^3.17.0"
   },
   "devDependencies": {
+    "concurrently": "^8.2.2",
     "nodemon": "^3.1.10"
   }
 }
