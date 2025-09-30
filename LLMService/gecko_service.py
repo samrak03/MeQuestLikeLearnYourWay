@@ -88,6 +88,7 @@ async def generate_problem(request: GenerateRequest):
     try:
         # 1. 토큰화
         inputs = tokenizer(full_prompt, return_tensors="pt")
+        inputs.pop("token_type_ids", None)   # 불필요한 key 제거
         inputs = inputs.to(model.device)
 
         # 2. 텍스트 생성

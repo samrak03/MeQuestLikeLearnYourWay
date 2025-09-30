@@ -7,6 +7,7 @@ dotenv.config();
 
 const GECKO_API_URL = process.env.GECKO_API_URL || "http://localhost:8001/generate";
 const SOLAR_API_URL = process.env.SOLAR_API_URL || "http://localhost:8002/summarize";
+const EXAONE_LLM_URL = process.env.SOLAR_API_URL || "http://localhost:8003/feedback";
 
 // GECKO 호출
 export async function callGecko(topic) {
@@ -27,12 +28,31 @@ export async function callGecko(topic) {
 }
 
 // SOLAR 호출
-export async function callSolar(text) {
+export async function callSolar(document) {
   try {
-    const response = await axios.post(SOLAR_API_URL, { text });
-    return response.data;
+    const payload = { document }; // <-- text → document
+    const { data } = await axios.post(
+      process.env.SOLAR_API_URL || "http://localhost:8002/summarize",
+      payload
+    );
+    return data;
   } catch (error) {
     console.error("❌ SOLAR 호출 실패:", error.message);
+    throw error;
+  }
+}
+
+// EXAONE 호출
+export async function callExaone(question, userAnswer, correctAnswer) {
+  try {
+    const response = await axios.post(`${EXAONE_API_URL}/feedback`, {
+      question,
+      user_answer: userAnswer,
+      correct_answer: correctAnswer,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ EXAONE API 호출 실패:", error.message);
     throw error;
   }
 }

@@ -72,9 +72,9 @@ async def summarize(request: GenerateRequest):
     try:
         # SOLAR-10.7B의 역할: 요약 및 시각화 준비
         system_prompt = (
-            "You are an expert summarization AI named SOLAR. "
-            "Summarize the following document in Korean into three concise sentences. "
-            "Focus on key concepts and main ideas only."
+            "너는 한국어 요약 전문가 SOLAR이다."
+            "다음 문서를 한국어로 세 문장으로 간결하게 요약하라. "
+            "핵심 개념과 주요 아이디어만 포함하라."
         )
 
         # 💡 SOLAR Instruct 모델의 대화 템플릿 (Mistral 포맷 사용)
@@ -82,6 +82,7 @@ async def summarize(request: GenerateRequest):
         
         # 1. 토큰화
         inputs = tokenizer(prompt_template, return_tensors="pt")
+        inputs.pop("token_type_ids", None)   # 불필요한 key 제거
         inputs = inputs.to(model.device)
         
         # 2. 텍스트 생성

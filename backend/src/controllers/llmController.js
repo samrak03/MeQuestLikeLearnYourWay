@@ -1,6 +1,6 @@
 // /mnt/d/MeQuest/Backend/src/controllers/llmController.js
 
-import { callGecko, callSolar } from "../services/llmService.js";
+import { callGecko, callSolar, callExaone } from "../services/llmService.js";
 
 
 export async function testGecko(req, res) {
@@ -20,5 +20,18 @@ export async function testSolar(req, res) {
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: "SOLAR-10.7B 호출 실패", detail: error.message });
+  }
+}
+
+export async function testExaone(req, res) {
+  try {
+    const { question, user_answer, correct_answer } = req.body;
+    const result = await callExaone(question, user_answer, correct_answer);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({
+      error: "EXAONE 호출 실패",
+      detail: error.message,
+    });
   }
 }
