@@ -1,16 +1,19 @@
-import pg from 'pg';
-import dotenv from 'dotenv';
+// src/config/db.postgres.js
+import dotenv from "dotenv";
+import pkg from "pg";
 
 dotenv.config();
+const { Pool } = pkg;
 
-const pool = new pg.Pool({
-  user: process.env.PG_USER,
+
+export const pgPool = new Pool({
   host: process.env.PG_HOST,
-  database: process.env.PG_NAME,
+  user: process.env.PG_USER,
   password: process.env.PG_PASSWORD,
-  port: process.env.PG_PORT || 5432,
-  max: 10, //최대 연결수 설정
+  database: process.env.PG_NAME,
+  port: Number(process.env.PG_PORT),
 });
+
 
 // 연결 테스트
 async function testConnection() {
@@ -23,6 +26,6 @@ async function testConnection() {
   }
 }
 
-testConnection();
+// testConnection();
 
-export default pool;
+export default pgPool;

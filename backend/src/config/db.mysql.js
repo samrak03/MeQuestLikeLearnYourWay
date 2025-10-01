@@ -3,14 +3,13 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const pool = mysql.createPool({
-    host: process.env.MYSQL_HOST,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-    database: process.env.MYSQL_NAME,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0,
+export const mysqlConn = mysql.createPool({
+  host: process.env.MYSQL_HOST,
+  user: process.env.MYSQL_USER,
+  password: process.env.MYSQL_PASSWORD,
+  database: process.env.MYSQL_NAME,
+  waitForConnections: true,
+  connectionLimit: 10,
 });
 
 async function testConnection() {
@@ -23,6 +22,7 @@ async function testConnection() {
     }
 }
 
-testConnection();
+// testConnection();
 
-export default pool;
+// 선택: default도 함께 제공 (어디서든 임포트 호환)
+export default mysqlConn;
