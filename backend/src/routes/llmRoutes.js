@@ -1,4 +1,4 @@
-// src/routes/app-llm.js
+// src/routes/llmRoutes.js
 
 import express from "express";
 import { generateProblemRAG, summarizeDocument, provideFeedback, testGecko, testSolar, testExaone } from "../controllers/llmController.js";

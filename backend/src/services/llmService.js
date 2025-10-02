@@ -31,51 +31,132 @@ export async function callGecko(topic) {
   }
 }
 
-// SOLAR 호출
+// --- 2. SOLAR 호출 (문서 요약) ---
 export async function callSolar(document) {
+  if (!SOLAR_LLM_URL) throw new Error("SOLAR_LLM_URL이 설정되지 않았습니다.");
+  
+  let summaryText = ""; 
+  const payload = { document };
+  const modelName = "SOLAR";
+
   try {
-    const payload = { document }; // <-- text → document
-    const { data } = await axios.post(SOLAR_LLM_URL, payload); // ✅ 전역 변수 사용
-    return data;
+    const startTime = Date.now();
+    const { data } = await axios.post(
+      `${SOLAR_LLM_URL}`,
+      payload,
+      { timeout: 60_000 }
+    );
+    const latency = Date.now() - startTime;
+
+    // ✅ 응답 안전 파싱 (string / object / fallback)
+    
+    if (typeof data?.summary === "string") {
+      summaryText = data.summary.trim();
+    } else if (data?.summary && typeof data.summary.summary === "string") {
+      summaryText = data.summary.summary.trim();
+    } else {
+      summaryText = String(data?.result ?? data?.text ?? data?.generated_text ?? "").trim();
+    }
+
+    // 최소 보정: 완전히 비어있다면 입력의 앞부분이라도 반환
+    if (!summaryText) summaryText = document.slice(0, 300);
+
+    // MySQL 로깅
+    await mysqlConn.execute(
+      `INSERT INTO logs (user_id, problem_id, activity_type, is_correct, feedback, details, model_name)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        1,
+        null, // 문제 생성이 아님
+        "summarize",
+        null,
+        null,
+        JSON.stringify({ 
+          document_length: document.length,
+          summary_length: summaryText.length,
+          latency_ms: latency,
+          raw_output: data?.generated_text?.slice(0, 1000) || summaryText.slice(0, 1000)
+        }),
+        modelName,
+      ]
+    );
+
+    return { summary: summaryText }; // 평탄화된 결과 반환
+    
   } catch (error) {
-    console.error("❌ SOLAR 호출 실패:", error.message);
+    console.error(`❌ ${modelName} API 호출 실패:`, error.message);
     throw error;
   }
 }
 
+
 // EXAONE 호출
 export async function callExaone(question, userAnswer, correctAnswer) {
+  if (!EXAONE_LLM_URL) throw new Error("EXAONE_LLM_URL이 설정되지 않았습니다.");
+  
+  let feedbackText = "";
+  const modelName = "EXAONE";
+  const payload = {
+    question,
+    user_answer: userAnswer,
+    correct_answer: correctAnswer,
+  };
+
   try {
-    const response = await axios.post(`${EXAONE_LLM_URL}`, {
-      question,
-      user_answer: userAnswer,
-      correct_answer: correctAnswer,
-    });
-    return response.data;
+    const startTime = Date.now();
+    const response = await axios.post(`${EXAONE_LLM_URL}`, payload);
+    const latency = Date.now() - startTime;
+    
+    // 💡 EXAONE FastAPI 응답 파싱: 'output' 키를 기대합니다.
+    feedbackText = String(response.data?.feedback ?? response.data?.output ?? response.data?.generated_text ?? "").trim();
+
+
+    // 2. MySQL 로깅 (피드백 활동 기록)
+    await mysqlConn.execute(
+      `INSERT INTO logs (user_id, problem_id, activity_type, is_correct, feedback, details, model_name)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        1,
+        null, // 문제 ID는 현재 알 수 없음 (추후 문제 제출 로직과 통합 시 수정)
+        "feedback",
+        null, // 정답 여부 정보 없음
+        feedbackText.length > 0 ? feedbackText : null, // feedback 컬럼에 텍스트 저장
+        JSON.stringify({ 
+          latency_ms: latency,
+          question: question,
+          user_answer: userAnswer,
+          correct_answer: correctAnswer,
+          raw_output: feedbackText.slice(0, 1000)
+        }),
+        modelName,
+      ]
+    );
+    
+    // 3. 컨트롤러로 반환할 최종 데이터
+    return { feedback: feedbackText };
+    
   } catch (error) {
-    console.error("❌ EXAONE API 호출 실패:", error.message);
+    console.error(`❌ ${modelName} API 호출 실패:`, error.message);
     throw error;
   }
 }
 
 
 function buildPrompt(topic, contexts) {
-  const contextBlock = contexts
-    .map(
-      (c, i) =>
-        `# CONTEXT ${i + 1}\n${c.content.trim()}\n(거리:${c.distance?.toFixed?.(4) ?? "NA"})`
-    )
-    .join("\n\n");
+  const contextBlock = (contexts || [])
+    .map((c, i) => {
+      const content = String(c?.content ?? "").trim();
+      const dist = typeof c?.distance === "number" ? c.distance.toFixed(4) : "NA";
+      return `# CONTEXT ${i + 1}\n${content}\n(거리:${dist})`;
+    })
+     .join("\n\n");
 
   return [
     `당신은 교과 기반 문제 생성기입니다.`,
     `주제: ${topic}`,
-    `아래 컨텍스트를 근거로 정확한 문제 1개를 생성하세요.`,
-    `- 보기나 수치가 필요하면 컨텍스트를 우선 사용`,
-    `- 정답도 함께 생성`,
-    `- 포맷:`,
-    `QUESTION: ...`,
-    `ANSWER: ...`,
+    `요구사항: 아래 컨텍스트만을 근거로 단일 문제와 정답을 한국어로 생성하세요. 추측 금지.`,
+    `출력형식(JSON, 한 줄, 추가 텍스트 금지):`,
+    `{"question":"...","answer":"..."}`,
     ``,
     `===== KNOWLEDGE CONTEXT =====`,
     contextBlock || "(no retrieved context)",
@@ -108,14 +189,19 @@ export async function callGeckoRAG({ topic, topK = 5, filter = { source: "proble
   );
 
   // 4) MySQL 저장 (problems/ logs)
-  //   - GECKO가 “QUESTION:… / ANSWER: …” 두 줄을 반환한다고 가정
-  const text = String(data?.result ?? "");
-  const q = text.split("ANSWER:")[0].replace(/^QUESTION:\s*/i, "").trim();
-  const a = text.split("ANSWER:")[1]?.trim() ?? "";
+  const raw = data?.parsed_json;
+  let question_text = raw?.question?.toString().trim() || "";
+  let answer_text   = raw?.answer?.toString().trim()   || "";
+  if (!question_text || !answer_text) {
+    const rawText = String(data?.result ?? data?.output ?? data?.text ?? "");
+    const qMatch = rawText.match(/QUESTION\s*:\s*([\s\S]*?)\nANSWER\s*:/i);
+    const aMatch = rawText.match(/ANSWER\s*:\s*([\s\S]*)$/i);
+    if (qMatch) question_text = qMatch[1].trim();
+    if (aMatch) answer_text   = aMatch[1].trim();
+    if (!question_text) question_text = topic;
+    if (!answer_text)   answer_text = "";
+  }
 
-  // 최소 방어
-  const question_text = q || topic;
-  const answer_text = a || "";
 
   // INSERT problems
   const [res] = await mysqlConn.execute(
@@ -135,7 +221,12 @@ export async function callGeckoRAG({ topic, topK = 5, filter = { source: "proble
       "generate",
       null,
       null,
-      JSON.stringify({ topic, retrieved: hits.map(h => ({ id: h.id, ref_id: h.ref_id, distance: h.distance })) }),
+      JSON.stringify({ 
+        topic, 
+        retrieved: hits.map(h => ({ id: h.id, ref_id: h.ref_id, distance: h.distance })),
+        // LLM 생성 결과의 원본 텍스트도 로그에 추가 (디버깅 용이)
+        raw_output: data?.generated_text.slice(0, 1000) // 너무 길면 잘라냄
+      }),
       "GECKO",
     ]
   );

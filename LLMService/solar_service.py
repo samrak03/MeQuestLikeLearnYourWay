@@ -72,9 +72,9 @@ async def summarize(request: GenerateRequest):
     try:
         # SOLAR-10.7B의 역할: 요약 및 시각화 준비
         system_prompt = (
-            "너는 한국어 요약 전문가 SOLAR이다."
-            "다음 문서를 한국어로 세 문장으로 간결하게 요약하라. "
-            "핵심 개념과 주요 아이디어만 포함하라."
+            "너는 한국어 교육 플랫폼을 위한 전문 요약입니다."
+            "모든 응답은 **반드시 한국어(Korean)로만** 작성해야 하며, 다른 언어나 불필요한 마커([SOLUTION], [RESULT] 등)는 절대 포함하지 마세요. "
+            "문서를 핵심만 요약하세요."
         )
 
         # 💡 SOLAR Instruct 모델의 대화 템플릿 (Mistral 포맷 사용)

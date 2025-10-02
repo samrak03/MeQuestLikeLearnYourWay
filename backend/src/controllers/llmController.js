@@ -30,37 +30,68 @@ export async function generateProblemRAG(req, res) {
   }
 }
 
-// 문서 요약 엔드포인트
+// SOLAR 문서 요약 (추가/구현)
 export async function summarizeDocument(req, res) {
-  const { document } = req.body;
+    const { document } = req.body;
 
-  if (!document) {
-    return res.status(400).json({ success: false, message: '문서(document)는 필수 입력값입니다.' });
-  }
+    // 1. 입력 유효성 검사
+    if (!document || typeof document !== 'string' || document.trim().length === 0) {
+        return res.status(400).json({ 
+            success: false, 
+            message: "요약할 'document' 필드가 요청 본문에 필요합니다." 
+        });
+    }
 
-  try {
-    const summary = await callSolar(document);
-    res.status(200).json({ success: true, summary: summary });
-  } catch (error) {
-    console.error('❌ Controller Error - SOLAR 요약:', error.message);
-    res.status(500).json({ success: false, message: '문서 요약 중 서버 오류가 발생했습니다.' });
-  }
+    try {
+        // 2. 서비스 호출 
+        const result = await callSolar(document);
+        
+        // 3. 응답 반환
+        res.json({ 
+            success: true, 
+            summary: result.summary // 💡 평탄화된 결과 (llmService.js에서 {summary: text} 반환 가정) 
+        });
+    } catch (error) {
+        console.error('summarizeDocument 라우트 처리 오류:', error.message);
+        res.status(500).json({ 
+            success: false, 
+            message: "SOLAR 서비스 처리 중 오류가 발생했습니다.", 
+            error: error.message 
+        });
+    }
 }
 
 // 오답 피드백 엔드포인트
 export async function provideFeedback(req, res) {
-  const { question, userAnswer, correctAnswer } = req.body;
+  const body = req.body || {};
+  const question = typeof body.question === "string" ? body.question.trim() : "";
+
+  // camelCase / snake_case 모두 허용
+  const userAnswer = typeof (body.userAnswer ?? body.user_answer) === "string"
+    ? (body.userAnswer ?? body.user_answer).trim()
+    : "";
+  const correctAnswer = typeof (body.correctAnswer ?? body.correct_answer) === "string"
+    ? (body.correctAnswer ?? body.correct_answer).trim()
+    : "";
 
   if (!question || !userAnswer || !correctAnswer) {
-    return res.status(400).json({ success: false, message: '모든 피드백 관련 정보(문제, 사용자 답변, 정답)는 필수입니다.' });
+    return res.status(400).json({
+      success: false,
+      message: "모든 피드백 관련 정보(문제, 사용자 답변, 정답)는 필수입니다.",
+    });
   }
 
   try {
-    const feedback = await callExaone(question, userAnswer, correctAnswer);
-    res.status(200).json({ success: true, feedback: feedback });
+    const result = await callExaone(question, userAnswer, correctAnswer);
+    // 스키마 통일: data 래핑
+    return res.status(200).json({ success: true, data: result });
   } catch (error) {
-    console.error('❌ Controller Error - EXAONE 피드백:', error.message);
-    res.status(500).json({ success: false, message: '오답 피드백 생성 중 서버 오류가 발생했습니다.' });
+    console.error("❌ Controller Error - EXAONE 피드백:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "오답 피드백 생성 중 서버 오류가 발생했습니다.",
+      error: error.message,
+    });
   }
 }
 
