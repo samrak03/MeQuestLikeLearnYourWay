@@ -1,16 +1,13 @@
 // /mnt/d/MeQuest/Backend/src/services/llmService.js
 
 import axios from "axios";
-import dotenv from 'dotenv';
-import { searchByText } from "../services/EmbeddigService.js";
+import { searchByText } from "../services/EmbeddingService.js";
 import { mysqlConn } from "../config/db.mysql.js";
+import { config } from '../config/index.js';
 
-
-dotenv.config();
-
-const GECKO_LLM_URL = process.env.GECKO_LLM_URL || "http://localhost:8001/generate";
-const SOLAR_LLM_URL = process.env.SOLAR_LLM_URL || "http://localhost:8002/summarize";
-const EXAONE_LLM_URL = process.env.EXAONE_LLM_URL || "http://localhost:8003/feedback";
+const GECKO_LLM_URL = config.llm.geckoUrl;
+const SOLAR_LLM_URL = config.llm.solarUrl;
+const EXAONE_LLM_URL = config.llm.exaoneUrl;
 
 
 // GECKO 호출
@@ -34,8 +31,8 @@ export async function callGecko(topic) {
 // --- 2. SOLAR 호출 (문서 요약) ---
 export async function callSolar(document) {
   if (!SOLAR_LLM_URL) throw new Error("SOLAR_LLM_URL이 설정되지 않았습니다.");
-  
-  let summaryText = ""; 
+
+  let summaryText = "";
   const payload = { document };
   const modelName = "SOLAR";
 
@@ -49,7 +46,7 @@ export async function callSolar(document) {
     const latency = Date.now() - startTime;
 
     // ✅ 응답 안전 파싱 (string / object / fallback)
-    
+
     if (typeof data?.summary === "string") {
       summaryText = data.summary.trim();
     } else if (data?.summary && typeof data.summary.summary === "string") {
@@ -71,7 +68,7 @@ export async function callSolar(document) {
         "summarize",
         null,
         null,
-        JSON.stringify({ 
+        JSON.stringify({
           document_length: document.length,
           summary_length: summaryText.length,
           latency_ms: latency,
@@ -82,7 +79,7 @@ export async function callSolar(document) {
     );
 
     return { summary: summaryText }; // 평탄화된 결과 반환
-    
+
   } catch (error) {
     console.error(`❌ ${modelName} API 호출 실패:`, error.message);
     throw error;
@@ -93,7 +90,7 @@ export async function callSolar(document) {
 // EXAONE 호출
 export async function callExaone(question, userAnswer, correctAnswer) {
   if (!EXAONE_LLM_URL) throw new Error("EXAONE_LLM_URL이 설정되지 않았습니다.");
-  
+
   let feedbackText = "";
   const modelName = "EXAONE";
   const payload = {
@@ -106,7 +103,7 @@ export async function callExaone(question, userAnswer, correctAnswer) {
     const startTime = Date.now();
     const response = await axios.post(`${EXAONE_LLM_URL}`, payload);
     const latency = Date.now() - startTime;
-    
+
     // 💡 EXAONE FastAPI 응답 파싱: 'output' 키를 기대합니다.
     feedbackText = String(response.data?.feedback ?? response.data?.output ?? response.data?.generated_text ?? "").trim();
 
@@ -121,7 +118,7 @@ export async function callExaone(question, userAnswer, correctAnswer) {
         "feedback",
         null, // 정답 여부 정보 없음
         feedbackText.length > 0 ? feedbackText : null, // feedback 컬럼에 텍스트 저장
-        JSON.stringify({ 
+        JSON.stringify({
           latency_ms: latency,
           question: question,
           user_answer: userAnswer,
@@ -131,10 +128,10 @@ export async function callExaone(question, userAnswer, correctAnswer) {
         modelName,
       ]
     );
-    
+
     // 3. 컨트롤러로 반환할 최종 데이터
     return { feedback: feedbackText };
-    
+
   } catch (error) {
     console.error(`❌ ${modelName} API 호출 실패:`, error.message);
     throw error;
@@ -149,7 +146,7 @@ function buildPrompt(topic, contexts) {
       const dist = typeof c?.distance === "number" ? c.distance.toFixed(4) : "NA";
       return `# CONTEXT ${i + 1}\n${content}\n(거리:${dist})`;
     })
-     .join("\n\n");
+    .join("\n\n");
 
   return [
     `당신은 교과 기반 문제 생성기입니다.`,
@@ -176,30 +173,30 @@ export async function callGeckoRAG({ topic, topK = 5, filter = { source: "proble
   const payload = {
     topic: prompt, // 💡 'input' 대신 'prompt' 키를 사용합니다.
     // GECKO FastAPI가 개별 LLM 설정을 받도록 payload에 포함
-    max_new_tokens: 256, 
+    max_new_tokens: 256,
     temperature: 0.8,
     top_p: 0.9,
     repetition_penalty: 1.2,
   };
 
   const { data } = await axios.post(
-   `${GECKO_LLM_URL}`,
-   payload, // 💡 수정된 payload 사용
-   { timeout: 60_000 }
+    `${GECKO_LLM_URL}`,
+    payload, // 💡 수정된 payload 사용
+    { timeout: 60_000 }
   );
 
   // 4) MySQL 저장 (problems/ logs)
   const raw = data?.parsed_json;
   let question_text = raw?.question?.toString().trim() || "";
-  let answer_text   = raw?.answer?.toString().trim()   || "";
+  let answer_text = raw?.answer?.toString().trim() || "";
   if (!question_text || !answer_text) {
     const rawText = String(data?.result ?? data?.output ?? data?.text ?? "");
     const qMatch = rawText.match(/QUESTION\s*:\s*([\s\S]*?)\nANSWER\s*:/i);
     const aMatch = rawText.match(/ANSWER\s*:\s*([\s\S]*)$/i);
     if (qMatch) question_text = qMatch[1].trim();
-    if (aMatch) answer_text   = aMatch[1].trim();
+    if (aMatch) answer_text = aMatch[1].trim();
     if (!question_text) question_text = topic;
-    if (!answer_text)   answer_text = "";
+    if (!answer_text) answer_text = "";
   }
 
 
@@ -221,8 +218,8 @@ export async function callGeckoRAG({ topic, topK = 5, filter = { source: "proble
       "generate",
       null,
       null,
-      JSON.stringify({ 
-        topic, 
+      JSON.stringify({
+        topic,
         retrieved: hits.map(h => ({ id: h.id, ref_id: h.ref_id, distance: h.distance })),
         // LLM 생성 결과의 원본 텍스트도 로그에 추가 (디버깅 용이)
         raw_output: data?.generated_text.slice(0, 1000) // 너무 길면 잘라냄

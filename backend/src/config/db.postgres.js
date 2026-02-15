@@ -1,17 +1,15 @@
 // src/config/db.postgres.js
-import dotenv from "dotenv";
 import pkg from "pg";
+import { config } from "./index.js";
 
-dotenv.config();
 const { Pool } = pkg;
 
-
 export const pgPool = new Pool({
-  host: process.env.PG_HOST,
-  user: process.env.PG_USER,
-  password: process.env.PG_PASSWORD,
-  database: process.env.PG_NAME,
-  port: Number(process.env.PG_PORT),
+  host: config.postgres.host,
+  user: config.postgres.user,
+  password: config.postgres.password,
+  database: config.postgres.database,
+  port: config.postgres.port,
 });
 
 

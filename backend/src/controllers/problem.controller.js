@@ -1,5 +1,5 @@
 // controllers/problem.controller.js
-import mysqlPool from '../config/db.mysql.js';
+import { mysqlConn } from '../config/db.mysql.js';
 
 // 문제 등록
 export async function createProblem(req, res) {
@@ -11,7 +11,7 @@ export async function createProblem(req, res) {
     }
 
     // DB 저장
-    const [result] = await mysqlPool.query(
+    const [result] = await mysqlConn.query(
       'INSERT INTO problems (user_id, topic, question_text, answer_text, level) VALUES (?, ?, ?, ?, ?)',
       [user_id || null, topic, question_text, answer_text, level || 1]
     );
@@ -29,7 +29,7 @@ export async function createProblem(req, res) {
 // 문제 목록 조회
 export async function getProblems(req, res) {
   try {
-    const [rows] = await mysqlPool.query(
+    const [rows] = await mysqlConn.query(
       'SELECT id, topic, question_text, answer_text, level, created_at FROM problems ORDER BY id DESC'
     );
     res.json(rows);
