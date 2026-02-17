@@ -20,8 +20,8 @@ export const config = {
     jwtSecret: process.env.JWT_SECRET || 'secret-key',
     llm: {
         geckoUrl: process.env.GECKO_LLM_URL || "http://localhost:8001/generate",
-        solarUrl: process.env.SOLAR_LLM_URL || "http://localhost:8002/summarize",
-        exaoneUrl: process.env.EXAONE_LLM_URL || "http://localhost:8003/feedback",
+        solarUrl: process.env.SOLAR_LLM_URL || "http://localhost:8001/summarize",
+        exaoneUrl: process.env.EXAONE_LLM_URL || "http://localhost:8001/feedback",
         embeddingUrl: (process.env.EXPRESS_EMBEDDING_URL || "http://localhost:8000/embeddings").replace(/\/$/, "")
     }
 };

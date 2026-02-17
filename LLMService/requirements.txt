@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pydantic
+transformers
+accelerate
+bitsandbytes
+python-dotenv
+scipy
+optimum

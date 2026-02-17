@@ -169,14 +169,14 @@ export async function callGeckoRAG({ topic, topK = 5, filter = { source: "proble
   // 2) 프롬프트 구성
   const prompt = buildPrompt(topic, hits);
 
-  // 3) GECKO 호출
+  // 3. GECKO (Qwen) 호출
   const payload = {
-    topic: prompt, // 💡 'input' 대신 'prompt' 키를 사용합니다.
-    // GECKO FastAPI가 개별 LLM 설정을 받도록 payload에 포함
-    max_new_tokens: 256,
-    temperature: 0.8,
+    topic: topic,
+    prompt: prompt, // 💡 Unified Service expects 'prompt' for RAG
+    max_new_tokens: 512, // Increased for Qwen
+    temperature: 0.7,
     top_p: 0.9,
-    repetition_penalty: 1.2,
+    repetition_penalty: 1.1,
   };
 
   const { data } = await axios.post(

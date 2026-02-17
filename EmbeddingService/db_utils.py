@@ -17,7 +17,7 @@ load_dotenv()
 # --- 환경 변수에서 DB 설정 로드 ---
 DB_CONFIG = {
     "user": os.getenv("PG_USER", "mequest_user"),
-    "password": os.getenv("PG_PASS", ""), # 비밀번호는 기본값 없이 공백으로 두어 설정 누락 시 오류 유도
+    "password": os.getenv("PG_PASS"), # 환경 변수 필수
     "database": os.getenv("PG_DB", "mequest_rag_db"),
     "host": os.getenv("PG_HOST", "localhost"),
     "port": int(os.getenv("PG_PORT", 5432)) # 포트는 int로 변환
