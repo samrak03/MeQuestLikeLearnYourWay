@@ -1,9 +1,6 @@
 fastapi
 uvicorn
 pydantic
-transformers
-accelerate
-bitsandbytes
 python-dotenv
+ollama
 scipy
-optimum
